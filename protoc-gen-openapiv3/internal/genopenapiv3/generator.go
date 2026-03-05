@@ -20,6 +20,9 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/pluginpb"
+
+	"google.golang.org/genproto/googleapis/api/visibility"
+	_ "google.golang.org/genproto/googleapis/api/visibility"
 )
 
 var errNoTargetService = errors.New("no target service defined in the file")
@@ -131,14 +134,16 @@ func (g *generator) generateFileSpec(file *descriptor.File) (*OpenAPI, error) {
 	// Check if any service has HTTP bindings (unless generating unbound methods)
 	hasBindings := false
 	for _, svc := range file.Services {
-		for _, method := range svc.Methods {
-			if len(method.Bindings) > 0 {
-				hasBindings = true
+		if isVisible(getServiceVisibilityOption(svc), g.reg) {
+			for _, method := range svc.Methods {
+				if len(method.Bindings) > 0 && isVisible(getMethodVisibilityOption(method), g.reg) {
+					hasBindings = true
+					break
+				}
+			}
+			if hasBindings {
 				break
 			}
-		}
-		if hasBindings {
-			break
 		}
 	}
 
@@ -192,6 +197,10 @@ func (g *generator) generateFileSpec(file *descriptor.File) (*OpenAPI, error) {
 
 // generateServicePaths generates paths for all methods in a service.
 func (g *generator) generateServicePaths(doc *OpenAPI, svc *descriptor.Service, referencedSchemas map[string]bool) {
+	if !isVisible(getServiceVisibilityOption(svc), g.reg) {
+		return
+	}
+
 	// Add service as a tag (unless disabled)
 	if !g.reg.GetDisableServiceTags() {
 		tagName := svc.GetName()
@@ -219,6 +228,9 @@ func (g *generator) generateServicePaths(doc *OpenAPI, svc *descriptor.Service, 
 
 // generateMethodPaths generates paths for all HTTP bindings of a method.
 func (g *generator) generateMethodPaths(doc *OpenAPI, svc *descriptor.Service, method *descriptor.Method, referencedSchemas map[string]bool) {
+	if !isVisible(getMethodVisibilityOption(method), g.reg) {
+		return
+	}
 	// If no bindings and not generating unbound methods, skip
 	if len(method.Bindings) == 0 {
 		if !g.reg.GetGenerateUnboundMethods() {
@@ -699,14 +711,14 @@ func (g *generator) generateEnumSchema(doc *OpenAPI, enum *descriptor.Enum) {
 	var enumValues []any
 	if g.reg.GetEnumsAsInts() {
 		for _, v := range enum.GetValue() {
-			if g.reg.GetOmitEnumDefaultValue() && v.GetNumber() == 0 {
+			if !isVisible(getEnumValueVisibilityOption(v), g.reg) || g.reg.GetOmitEnumDefaultValue() && v.GetNumber() == 0 {
 				continue
 			}
 			enumValues = append(enumValues, int(v.GetNumber()))
 		}
 	} else {
 		for _, v := range enum.GetValue() {
-			if g.reg.GetOmitEnumDefaultValue() && v.GetNumber() == 0 {
+			if !isVisible(getEnumValueVisibilityOption(v), g.reg) || g.reg.GetOmitEnumDefaultValue() && v.GetNumber() == 0 {
 				continue
 			}
 			enumValues = append(enumValues, v.GetName())
@@ -1108,4 +1120,89 @@ func (g *generator) getFieldRequiredFromBehavior(field *descriptor.Field) bool {
 	}
 
 	return required
+}
+
+// Visibility helpers
+func getFieldVisibilityOption(fd *descriptor.Field) *visibility.VisibilityRule {
+	if fd.Options == nil {
+		return nil
+	}
+	if !proto.HasExtension(fd.Options, visibility.E_FieldVisibility) {
+		return nil
+	}
+	ext := proto.GetExtension(fd.Options, visibility.E_FieldVisibility)
+	opts, ok := ext.(*visibility.VisibilityRule)
+	if !ok {
+		return nil
+	}
+	return opts
+}
+
+func getServiceVisibilityOption(fd *descriptor.Service) *visibility.VisibilityRule {
+	if fd.Options == nil {
+		return nil
+	}
+	if !proto.HasExtension(fd.Options, visibility.E_ApiVisibility) {
+		return nil
+	}
+	ext := proto.GetExtension(fd.Options, visibility.E_ApiVisibility)
+	opts, ok := ext.(*visibility.VisibilityRule)
+	if !ok {
+		return nil
+	}
+	return opts
+}
+
+func getMethodVisibilityOption(fd *descriptor.Method) *visibility.VisibilityRule {
+	if fd.Options == nil {
+		return nil
+	}
+	if !proto.HasExtension(fd.Options, visibility.E_MethodVisibility) {
+		return nil
+	}
+	ext := proto.GetExtension(fd.Options, visibility.E_MethodVisibility)
+	opts, ok := ext.(*visibility.VisibilityRule)
+	if !ok {
+		return nil
+	}
+	return opts
+}
+
+func getEnumValueVisibilityOption(fd *descriptorpb.EnumValueDescriptorProto) *visibility.VisibilityRule {
+	if fd.Options == nil {
+		return nil
+	}
+	if !proto.HasExtension(fd.Options, visibility.E_ValueVisibility) {
+		return nil
+	}
+	ext := proto.GetExtension(fd.Options, visibility.E_ValueVisibility)
+	opts, ok := ext.(*visibility.VisibilityRule)
+	if !ok {
+		return nil
+	}
+	return opts
+}
+
+// isVisible checks if a field/RPC is visible based on the visibility restriction
+// combined with the `visibility_restriction_selectors`.
+// Elements with an overlap on `visibility_restriction_selectors` are visible, those without are not visible.
+// Elements without `google.api.VisibilityRule` annotations entirely are always visible.
+func isVisible(r *visibility.VisibilityRule, reg *descriptor.Registry) bool {
+	if r == nil {
+		return true
+	}
+
+	restrictions := strings.Split(strings.TrimSpace(r.Restriction), ",")
+	// No restrictions results in the element always being visible
+	if len(restrictions) == 0 {
+		return true
+	}
+
+	for _, restriction := range restrictions {
+		if reg.GetVisibilityRestrictionSelectors()[strings.TrimSpace(restriction)] {
+			return true
+		}
+	}
+
+	return false
 }

@@ -1018,6 +1018,24 @@ func TestGenerateFromProtoDescriptor(t *testing.T) {
 				reg.SetDisableDefaultErrors(true)
 			},
 		},
+		{
+			name:           "visibility restriction selectors internal",
+			inputProtoText: "testdata/generator/visibility.prototext",
+			wantJSON:       "testdata/generator/visibility_internal.openapi.json",
+			registryModifier: func(reg *descriptor.Registry) {
+				reg.SetVisibilityRestrictionSelectors([]string{"INTERNAL"})
+				reg.SetAllowMerge(true)
+			},
+		},
+		{
+			name:           "visibility restriction selectors none",
+			inputProtoText: "testdata/generator/visibility.prototext",
+			wantJSON:       "testdata/generator/visibility_none.openapi.json",
+			registryModifier: func(reg *descriptor.Registry) {
+				reg.SetVisibilityRestrictionSelectors([]string{})
+				reg.SetAllowMerge(true)
+			},
+		},
 	}
 
 	for _, tt := range tests {
