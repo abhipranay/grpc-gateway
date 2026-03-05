@@ -475,7 +475,7 @@ func (g *generator) buildResponses(method *descriptor.Method, referencedSchemas 
 	responses := NewResponses()
 
 	// Success response (200)
-	if method.ResponseType != nil {
+	if !g.reg.GetDisableDefaultResponses() && method.ResponseType != nil {
 		schemaName := g.messageSchemaName(method.ResponseType)
 		referencedSchemas[method.ResponseType.FQMN()] = true
 
@@ -490,7 +490,7 @@ func (g *generator) buildResponses(method *descriptor.Method, referencedSchemas 
 	}
 
 	// Default error response (unless disabled)
-	if !g.reg.GetDisableDefaultResponses() {
+	if !g.reg.GetDisableDefaultErrors() {
 		responses.Default = &ResponseRef{
 			Value: NewResponse("An unexpected error response").WithJSONSchema(NewSchemaRef("google.rpc.Status")),
 		}

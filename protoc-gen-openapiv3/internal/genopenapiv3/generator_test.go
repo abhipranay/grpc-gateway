@@ -983,9 +983,10 @@ func TestSchemaNullableField(t *testing.T) {
 
 func TestGenerateFromProtoDescriptor(t *testing.T) {
 	tests := []struct {
-		name           string
-		inputProtoText string
-		wantJSON       string
+		name             string
+		inputProtoText   string
+		wantJSON         string
+		registryModifier func(*descriptor.Registry)
 	}{
 		{
 			name:           "simple echo service",
@@ -996,6 +997,26 @@ func TestGenerateFromProtoDescriptor(t *testing.T) {
 			name:           "merged",
 			inputProtoText: "testdata/generator/merged.prototext",
 			wantJSON:       "testdata/generator/merged.openapi.json",
+			registryModifier: func(reg *descriptor.Registry) {
+				reg.SetAllowMerge(true)
+			},
+		},
+		{
+			name:           "disable default errors",
+			inputProtoText: "testdata/generator/simple_echo.prototext",
+			wantJSON:       "testdata/generator/disable_default_errors.openapi.json",
+			registryModifier: func(reg *descriptor.Registry) {
+				reg.SetDisableDefaultErrors(true)
+			},
+		},
+		{
+			name:           "disable default responses",
+			inputProtoText: "testdata/generator/disable_default_responses.prototext",
+			wantJSON:       "testdata/generator/disable_default_responses.openapi.json",
+			registryModifier: func(reg *descriptor.Registry) {
+				reg.SetDisableDefaultResponses(true)
+				reg.SetDisableDefaultErrors(true)
+			},
 		},
 	}
 
@@ -1014,7 +1035,7 @@ func TestGenerateFromProtoDescriptor(t *testing.T) {
 			}
 
 			// Generate OpenAPI spec
-			resp := requireGenerate(t, &req, "3.1.0")
+			resp := requireGenerate(t, &req, "3.1.0", tt.registryModifier)
 			if len(resp) != 1 {
 				t.Fatalf("invalid count, expected: 1, actual: %d", len(resp))
 			}
@@ -1047,11 +1068,14 @@ func requireGenerate(
 	tb testing.TB,
 	req *pluginpb.CodeGeneratorRequest,
 	openapiVersion string,
+	registryModifier func(*descriptor.Registry),
 ) []*descriptor.ResponseFile {
 	tb.Helper()
 
 	reg := descriptor.NewRegistry()
-	reg.SetAllowMerge(true)
+	if registryModifier != nil {
+		registryModifier(reg)
+	}
 
 	if err := reg.Load(req); err != nil {
 		tb.Fatalf("failed to load request: %s", err)
