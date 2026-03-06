@@ -1,50 +1,10 @@
 {
     "openapi": "3.1.0",
     "info": {
-        "title": "example/v1/spec.proto",
+        "title": "example/v1/echo.proto",
         "version": "1.0"
     },
     "paths": {
-        "/v1/aecho3": {
-            "post": {
-                "tags": [
-                    "EchoService2"
-                ],
-                "operationId": "EchoService2_Echo3",
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/example.v1.EchoRequest2"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "A successful response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/example.v1.EchoResponse2"
-                                }
-                            }
-                        }
-                    },
-                    "default": {
-                        "description": "An unexpected error response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/google.rpc.Status"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/v1/echo": {
             "post": {
                 "tags": [
@@ -85,17 +45,17 @@
                 }
             }
         },
-        "/v1/echo2": {
+        "/v1/aecho": {
             "post": {
                 "tags": [
-                    "EchoService2"
+                    "EchoService"
                 ],
-                "operationId": "EchoService2_Echo2",
+                "operationId": "EchoService_AEcho",
                 "requestBody": {
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/example.v1.EchoRequest2"
+                                "$ref": "#/components/schemas/example.v1.EchoRequest"
                             }
                         }
                     },
@@ -107,7 +67,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/example.v1.EchoResponse2"
+                                    "$ref": "#/components/schemas/example.v1.EchoResponse"
                                 }
                             }
                         }
@@ -136,23 +96,7 @@
                     }
                 }
             },
-            "example.v1.EchoRequest2": {
-                "type": "object",
-                "properties": {
-                    "message": {
-                        "type": "string"
-                    }
-                }
-            },
             "example.v1.EchoResponse": {
-                "type": "object",
-                "properties": {
-                    "message": {
-                        "type": "string"
-                    }
-                }
-            },
-            "example.v1.EchoResponse2": {
                 "type": "object",
                 "properties": {
                     "message": {
@@ -194,9 +138,6 @@
     "tags": [
         {
             "name": "EchoService"
-        },
-        {
-            "name": "EchoService2"
         }
     ]
 }

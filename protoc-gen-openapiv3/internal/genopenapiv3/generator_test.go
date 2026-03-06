@@ -1,6 +1,7 @@
 package genopenapiv3
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -689,6 +690,19 @@ func jsonEqual(t *testing.T, a, b string) bool {
 	return reflect.DeepEqual(objA, objB)
 }
 
+func jsonEqualOrdered(t *testing.T, a, b []byte) bool {
+	var bufA, bufB bytes.Buffer
+	if err := json.Compact(&bufA, a); err != nil {
+		t.Errorf("Failed to compact first JSON: %v", err)
+		return false
+	}
+	if err := json.Compact(&bufB, b); err != nil {
+		t.Errorf("Failed to compact second JSON: %v", err)
+		return false
+	}
+	return bytes.Equal(bufA.Bytes(), bufB.Bytes())
+}
+
 func TestExtractFieldBehavior(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -992,6 +1006,17 @@ func TestGenerateFromProtoDescriptor(t *testing.T) {
 			name:           "simple echo service",
 			inputProtoText: "testdata/generator/simple_echo.prototext",
 			wantJSON:       "testdata/generator/simple_echo.openapi.json",
+			registryModifier: func(reg *descriptor.Registry) {
+				reg.SetPreserveRPCOrder(false)
+			},
+		},
+		{
+			name:           "simple echo service ordered",
+			inputProtoText: "testdata/generator/simple_echo.prototext",
+			wantJSON:       "testdata/generator/simple_echo_ordered.openapi.json",
+			registryModifier: func(reg *descriptor.Registry) {
+				reg.SetPreserveRPCOrder(true)
+			},
 		},
 		{
 			name:           "merged",
@@ -999,6 +1024,15 @@ func TestGenerateFromProtoDescriptor(t *testing.T) {
 			wantJSON:       "testdata/generator/merged.openapi.json",
 			registryModifier: func(reg *descriptor.Registry) {
 				reg.SetAllowMerge(true)
+			},
+		},
+		{
+			name:           "merged ordered",
+			inputProtoText: "testdata/generator/merged.prototext",
+			wantJSON:       "testdata/generator/merged_ordered.openapi.json",
+			registryModifier: func(reg *descriptor.Registry) {
+				reg.SetAllowMerge(true)
+				reg.SetPreserveRPCOrder(true)
 			},
 		},
 		{
@@ -1060,7 +1094,7 @@ func TestGenerateFromProtoDescriptor(t *testing.T) {
 			got := resp[0].GetContent()
 
 			// Print the generated output for debugging
-			if false {
+			if true {
 				if err := os.WriteFile(fmt.Sprintf("%s.generated.json", tt.name), []byte(got), 0644); err != nil {
 					t.Fatalf("Failed to write generated JSON for debugging: %v", err)
 				}
@@ -1074,7 +1108,7 @@ func TestGenerateFromProtoDescriptor(t *testing.T) {
 			want := string(wantBytes)
 
 			// Compare generated JSON with expected JSON
-			if !jsonEqual(t, got, want) {
+			if !jsonEqualOrdered(t, []byte(got), []byte(want)) {
 				t.Errorf("Generated JSON does not match expected JSON.\nGot:\n%s\n\nWant:\n%s", got, want)
 			}
 		})

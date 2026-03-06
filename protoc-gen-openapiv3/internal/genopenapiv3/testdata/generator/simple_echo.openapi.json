@@ -5,6 +5,46 @@
         "version": "1.0"
     },
     "paths": {
+        "/v1/aecho": {
+            "post": {
+                "tags": [
+                    "EchoService"
+                ],
+                "operationId": "EchoService_AEcho",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/example.v1.EchoRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "A successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/example.v1.EchoResponse"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/google.rpc.Status"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/v1/echo": {
             "post": {
                 "tags": [

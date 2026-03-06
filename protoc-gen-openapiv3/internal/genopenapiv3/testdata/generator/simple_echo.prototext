@@ -35,6 +35,17 @@ proto_file: {
         }
       }
     }
+    method: {
+      name: "AEcho"
+      input_type: ".example.v1.EchoRequest"
+      output_type: ".example.v1.EchoResponse"
+      options: {
+        [google.api.http]: {
+          post: "/v1/aecho"
+          body: "*"
+        }
+      }
+    }
   }
   options: {
     go_package: "github.com/example/v1;examplev1"

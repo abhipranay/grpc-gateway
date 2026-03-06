@@ -79,6 +79,17 @@ proto_file: {
         }
       }
     }
+    method: {
+      name: "Echo3"
+      input_type: ".example.v1.EchoRequest2"
+      output_type: ".example.v1.EchoResponse2"
+      options: {
+        [google.api.http]: {
+          post: "/v1/aecho3"
+          body: "*"
+        }
+      }
+    }
   }
   options: {
     go_package: "github.com/example/v1;examplev1"
