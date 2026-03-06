@@ -150,20 +150,22 @@ func (g *generator) generateFileSpec(file *descriptor.File) (*OpenAPI, error) {
 	}
 
 	// Generate schema definitions for referenced messages
-	for schemaName := range referencedSchemas {
-		if _, exists := doc.Components.Schemas[schemaName]; exists {
+	// referencedSchemas contains FQMNs (with leading dot) or special names like "google.rpc.Status"
+	for fqn := range referencedSchemas {
+		// Try to look up the message
+		msg, err := g.reg.LookupMsg("", fqn)
+		if err != nil {
+			// Try looking up as enum
+			enum, err := g.reg.LookupEnum("", fqn)
+			if err != nil {
+				continue // Skip if not found (e.g., google.rpc.Status handled separately)
+			}
+			g.generateEnumSchema(doc, enum)
 			continue
 		}
 
-		// Try to look up the message
-		msg, err := g.reg.LookupMsg("", "."+schemaName)
-		if err != nil {
-			// Try looking up as enum
-			enum, err := g.reg.LookupEnum("", "."+schemaName)
-			if err != nil {
-				continue // Skip if not found
-			}
-			g.generateEnumSchema(doc, enum)
+		schemaName := g.messageSchemaName(msg)
+		if _, exists := doc.Components.Schemas[schemaName]; exists {
 			continue
 		}
 		g.generateMessageSchema(doc, msg, make(map[string]bool))
@@ -335,7 +337,7 @@ func (g *generator) buildUnboundOperation(svc *descriptor.Service, method *descr
 	var requestBody *RequestBodyRef
 	if method.RequestType != nil {
 		schemaName := g.messageSchemaName(method.RequestType)
-		referencedSchemas[schemaName] = true
+		referencedSchemas[method.RequestType.FQMN()] = true
 		requestBody = &RequestBodyRef{
 			Value: NewJSONRequestBody(NewSchemaRef(schemaName), true),
 		}
@@ -444,7 +446,7 @@ func (g *generator) buildRequestBody(method *descriptor.Method, binding *descrip
 	if len(binding.Body.FieldPath) == 0 {
 		// Build schema for body fields only
 		schemaName := g.messageSchemaName(method.RequestType)
-		referencedSchemas[schemaName] = true
+		referencedSchemas[method.RequestType.FQMN()] = true
 
 		return &RequestBodyRef{
 			Value: NewJSONRequestBody(NewSchemaRef(schemaName), true),
@@ -467,7 +469,7 @@ func (g *generator) buildResponses(method *descriptor.Method, referencedSchemas 
 	// Success response (200)
 	if method.ResponseType != nil {
 		schemaName := g.messageSchemaName(method.ResponseType)
-		referencedSchemas[schemaName] = true
+		referencedSchemas[method.ResponseType.FQMN()] = true
 
 		successComment := messageComments(g.reg, method.ResponseType)
 		if successComment == "" {
@@ -846,7 +848,7 @@ func (g *generator) fieldTypeToSchema(field *descriptor.Field, referencedSchemas
 		}
 		schemaName := g.messageSchemaName(msg)
 		if referencedSchemas != nil {
-			referencedSchemas[schemaName] = true
+			referencedSchemas[msg.FQMN()] = true
 		}
 		return NewSchemaRef(schemaName)
 
@@ -858,7 +860,7 @@ func (g *generator) fieldTypeToSchema(field *descriptor.Field, referencedSchemas
 		}
 		schemaName := g.enumSchemaName(enum)
 		if referencedSchemas != nil {
-			referencedSchemas[schemaName] = true
+			referencedSchemas[enum.FQEN()] = true
 		}
 		return NewSchemaRef(schemaName)
 
