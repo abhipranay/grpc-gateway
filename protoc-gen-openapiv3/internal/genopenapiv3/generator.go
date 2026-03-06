@@ -414,6 +414,9 @@ func (g *generator) buildParameters(method *descriptor.Method, binding *descript
 
 	// Add path parameters
 	for _, pathParam := range binding.PathParams {
+		if !isVisible(getFieldVisibilityOption(pathParam.Target), g.reg) {
+			continue
+		}
 		schema := g.fieldToSchemaRef(pathParam.Target, referencedSchemas)
 		param := NewPathParameter(pathParam.FieldPath.String(), schema)
 
@@ -429,6 +432,9 @@ func (g *generator) buildParameters(method *descriptor.Method, binding *descript
 	// Add query parameters (fields not in path or body)
 	if method.RequestType != nil {
 		for _, field := range method.RequestType.Fields {
+			if !isVisible(getFieldVisibilityOption(field), g.reg) {
+				continue
+			}
 			// Skip path parameters
 			if isPathParam(field, binding.PathParams) {
 				continue
@@ -620,6 +626,9 @@ func (g *generator) generateMessageSchema(doc *OpenAPI, msg *descriptor.Message,
 	// Note: oneof fields are not required since only one can be set
 	for _, group := range oneofGroups {
 		for _, field := range group.fields {
+			if !isVisible(getFieldVisibilityOption(field), g.reg) {
+				continue
+			}
 			_ = g.addFieldToSchema(doc, schema, field, visited)
 		}
 	}
@@ -688,6 +697,9 @@ func (g *generator) generateOneOfSchemas(parentSchema *Schema, groups []oneofGro
 	for _, group := range groups {
 		// For each field in the oneof, create a schema that requires only that field
 		for _, field := range group.fields {
+			if !isVisible(getFieldVisibilityOption(field), g.reg) {
+				continue
+			}
 			fieldName := g.fieldName(field)
 
 			// Create a schema that requires this specific field from the oneof
