@@ -22,7 +22,6 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 
 	"google.golang.org/genproto/googleapis/api/visibility"
-	_ "google.golang.org/genproto/googleapis/api/visibility"
 )
 
 var errNoTargetService = errors.New("no target service defined in the file")
@@ -714,14 +713,14 @@ func (g *generator) generateEnumSchema(doc *OpenAPI, enum *descriptor.Enum) {
 	var enumValues []any
 	if g.reg.GetEnumsAsInts() {
 		for _, v := range enum.GetValue() {
-			if !isVisible(getEnumValueVisibilityOption(v), g.reg) || g.reg.GetOmitEnumDefaultValue() && v.GetNumber() == 0 {
+			if !isVisible(getEnumValueVisibilityOption(v), g.reg) || (g.reg.GetOmitEnumDefaultValue() && v.GetNumber() == 0) {
 				continue
 			}
 			enumValues = append(enumValues, int(v.GetNumber()))
 		}
 	} else {
 		for _, v := range enum.GetValue() {
-			if !isVisible(getEnumValueVisibilityOption(v), g.reg) || g.reg.GetOmitEnumDefaultValue() && v.GetNumber() == 0 {
+			if !isVisible(getEnumValueVisibilityOption(v), g.reg) || (g.reg.GetOmitEnumDefaultValue() && v.GetNumber() == 0) {
 				continue
 			}
 			enumValues = append(enumValues, v.GetName())
