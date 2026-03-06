@@ -218,9 +218,6 @@
             "test.MixedFieldMessage": {
                 "type": "object",
                 "properties": {
-                    "internal_field": {
-                        "type": "string"
-                    },
                     "public_field": {
                         "type": "string"
                     }

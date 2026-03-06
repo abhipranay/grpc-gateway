@@ -596,6 +596,9 @@ func (g *generator) generateMessageSchema(doc *OpenAPI, msg *descriptor.Message,
 
 	// Process regular fields (not in oneof)
 	for _, field := range regularFields {
+		if !isVisible(getFieldVisibilityOption(field), g.reg) {
+			continue
+		}
 		isRequired := g.addFieldToSchema(doc, schema, field, visited)
 
 		// Track required fields based on field_behavior annotations
