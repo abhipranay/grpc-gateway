@@ -452,7 +452,7 @@ func TestConvertSchema_ZeroMinimumMaximum(t *testing.T) {
 			// Check minimum
 			if tt.wantMinimum != nil {
 				if result.Value.Minimum == nil {
-					t.Errorf("BUG: minimum constraint is missing - explicitly set minimum: %v was silently ignored",
+					t.Errorf("minimum constraint is missing: expected minimum: %v to be set",
 						*tt.wantMinimum)
 				} else if *result.Value.Minimum != *tt.wantMinimum {
 					t.Errorf("minimum = %v, want %v", *result.Value.Minimum, *tt.wantMinimum)
@@ -466,7 +466,7 @@ func TestConvertSchema_ZeroMinimumMaximum(t *testing.T) {
 			// Check maximum
 			if tt.wantMaximum != nil {
 				if result.Value.Maximum == nil {
-					t.Errorf("BUG: maximum constraint is missing - explicitly set maximum: %v was silently ignored",
+					t.Errorf("maximum constraint is missing: expected maximum: %v to be set",
 						*tt.wantMaximum)
 				} else if *result.Value.Maximum != *tt.wantMaximum {
 					t.Errorf("maximum = %v, want %v", *result.Value.Maximum, *tt.wantMaximum)

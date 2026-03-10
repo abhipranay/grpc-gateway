@@ -2191,7 +2191,7 @@ proto_file: {
 	// Verify that the MetadataEntry schema is NOT included (it's synthetic)
 	for name := range schemas {
 		if strings.Contains(name, "MetadataEntry") {
-			t.Errorf("BUG: Synthetic map entry schema %q should not appear in output", name)
+			t.Errorf("synthetic map entry schema %q should not appear in output", name)
 		}
 	}
 
@@ -3306,9 +3306,9 @@ proto_file: {
 	// Check if minimum: 0 is present
 	minVal, hasMin := countField["minimum"]
 	if !hasMin {
-		t.Errorf("BUG: minimum constraint is missing - explicitly set minimum: 0 was silently ignored")
+		t.Errorf("minimum constraint is missing: expected minimum: 0 to be set")
 	} else if minVal.(float64) != 0 {
-		t.Errorf("BUG: minimum should be 0, got %v", minVal)
+		t.Errorf("minimum = %v, want 0", minVal)
 	}
 
 	// Check if maximum: 100 is present (should work)
