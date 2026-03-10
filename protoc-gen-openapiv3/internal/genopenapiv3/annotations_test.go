@@ -368,10 +368,6 @@ func TestConvertSchema(t *testing.T) {
 
 // TestConvertSchema_ZeroMinimumMaximum verifies that explicitly setting
 // minimum: 0 or maximum: 0 in a Schema annotation is correctly preserved.
-//
-// BUG: The convertSchema function uses `schema.GetMinimum() != 0` which
-// fails to apply the constraint when the user explicitly sets minimum: 0.
-// The fix is to use `schema.HasMinimum()` to check presence instead of value.
 func TestConvertSchema_ZeroMinimumMaximum(t *testing.T) {
 	t.Parallel()
 
@@ -770,15 +766,15 @@ func TestApplyInfoAnnotation(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name         string
-		opts         *options.Info
-		wantTitle    string
-		wantVersion  string
-		wantSummary  string
-		wantDesc     string
-		wantTerms    string
-		wantContact  bool
-		wantLicense  bool
+		name        string
+		opts        *options.Info
+		wantTitle   string
+		wantVersion string
+		wantSummary string
+		wantDesc    string
+		wantTerms   string
+		wantContact bool
+		wantLicense bool
 	}{
 		{
 			name: "apply all info fields",
@@ -859,19 +855,19 @@ func TestApplySchemaAnnotation(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name            string
-		opts            *options.Schema
-		wantTitle       string
-		wantDesc        string
-		wantExample     string
-		wantReadOnly    bool
-		wantWriteOnly   bool
-		wantNullable    bool
-		wantDeprecated  bool
-		wantRequired    []string
-		wantAllOf       int
-		wantAnyOf       int
-		wantOneOf       int
+		name           string
+		opts           *options.Schema
+		wantTitle      string
+		wantDesc       string
+		wantExample    string
+		wantReadOnly   bool
+		wantWriteOnly  bool
+		wantNullable   bool
+		wantDeprecated bool
+		wantRequired   []string
+		wantAllOf      int
+		wantAnyOf      int
+		wantOneOf      int
 	}{
 		{
 			name: "apply title and description",
@@ -1536,7 +1532,7 @@ func TestApplyComponentsAnnotation(t *testing.T) {
 			name: "add responses",
 			opts: &options.Components{
 				Responses: map[string]*options.Response{
-					"NotFound": {Description: "Resource not found"},
+					"NotFound":   {Description: "Resource not found"},
 					"BadRequest": {Description: "Invalid request"},
 				},
 			},
