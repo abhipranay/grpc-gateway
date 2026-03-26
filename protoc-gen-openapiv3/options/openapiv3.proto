@@ -146,8 +146,8 @@ message Components {
   // An object to hold reusable Schema Objects.
   map<string, SchemaOrReference> schemas = 1;
   // An object to hold reusable Response Objects.
-  // Values can be inline Response definitions or references to other responses.
-  map<string, ResponseOrReference> responses = 2;
+  // Uses repeated NamedResponseOrReference to preserve insertion order.
+  repeated NamedResponseOrReference responses = 2;
   // An object to hold reusable Parameter Objects.
   map<string, Parameter> parameters = 3;
   // An object to hold reusable Example Objects.
@@ -209,7 +209,7 @@ message Operation {
   RequestBody request_body = 7;
   // The list of possible responses as they are returned from executing this
   // operation.
-  map<string, Response> responses = 8;
+  Responses responses = 8;
   // Declares this operation to be deprecated. Default value is false.
   bool deprecated = 9;
   // A declaration of which security mechanisms can be used for this operation.
@@ -248,6 +248,31 @@ message ResponseOrReference {
     Response response = 1;
     Reference reference = 2;
   }
+}
+
+// Automatically-generated message used to represent maps of ResponseOrReference as ordered (name,value) pairs.
+message NamedResponseOrReference {
+  // Map key
+  string name = 1;
+  // Mapped value
+  ResponseOrReference value = 2;
+}
+
+// `Responses` is a representation of OpenAPI v3 specification's Responses object.
+// A container for the expected responses of an operation. The container maps an HTTP
+// response code to the expected response.
+//
+// See: https://spec.openapis.org/oas/v3.1.0#responses-object
+//
+message Responses {
+  // The documentation of responses other than the ones declared for specific HTTP
+  // response codes. Use this field to cover undeclared responses.
+  ResponseOrReference default = 1;
+  // The documentation of responses for specific HTTP response codes.
+  // Uses repeated NamedResponseOrReference to preserve insertion order.
+  repeated NamedResponseOrReference response_or_reference = 2;
+  // Custom properties that start with "x-" such as "x-foo".
+  map<string, google.protobuf.Value> extensions = 3;
 }
 
 // `MediaType` is a representation of OpenAPI v3 specification's Media Type object.

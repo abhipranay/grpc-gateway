@@ -177,11 +177,11 @@ func (g *generator) applyComponentsAnnotation(comp *Components, opts *options.Co
 	}
 
 	// Apply Responses
-	for name, respOrRef := range opts.GetResponses() {
+	for _, namedResp := range opts.GetResponses() {
 		if comp.Responses == nil {
 			comp.Responses = make(map[string]*ResponseRef)
 		}
-		comp.Responses[name] = g.convertResponseOrReference(respOrRef)
+		comp.Responses[namedResp.GetName()] = g.convertResponseOrReference(namedResp.GetValue())
 	}
 
 	// Apply Parameters
@@ -257,11 +257,18 @@ func (g *generator) applyOperationAnnotation(op *Operation, method *descriptor.M
 	}
 
 	// Apply additional responses (merge with existing)
-	for code, resp := range opts.GetResponses() {
+	if responses := opts.GetResponses(); responses != nil {
 		if op.Responses == nil {
 			op.Responses = NewResponses()
 		}
-		op.Responses.Codes[code] = &ResponseRef{Value: g.convertResponse(resp)}
+		// Apply default response
+		if defaultResp := responses.GetDefault(); defaultResp != nil {
+			op.Responses.Default = g.convertResponseOrReference(defaultResp)
+		}
+		// Apply status code specific responses
+		for _, namedResp := range responses.GetResponseOrReference() {
+			op.Responses.Codes[namedResp.GetName()] = g.convertResponseOrReference(namedResp.GetValue())
+		}
 	}
 
 	// Apply request body override if provided

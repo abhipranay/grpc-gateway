@@ -576,8 +576,12 @@ proto_file: {
           summary: "Get an item by ID"
           description: "Returns a single item by its unique identifier."
           responses: {
-            key: "404"
-            value: { description: "Item not found" }
+            response_or_reference: {
+              name: "404"
+              value: {
+                response: { description: "Item not found" }
+              }
+            }
           }
         }
       }
@@ -877,7 +881,7 @@ proto_file: {
           }
         }
         responses: {
-          key: "NotFound"
+          name: "NotFound"
           value: {
             response: {
               description: "Resource not found"
