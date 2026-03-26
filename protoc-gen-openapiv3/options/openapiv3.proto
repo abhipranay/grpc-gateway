@@ -228,7 +228,8 @@ message Response {
   // for rich text representation.
   string description = 1;
   // Maps a header name to its definition.
-  map<string, Header> headers = 2;
+  // Values can be inline Header definitions or references to other headers.
+  map<string, HeaderOrReference> headers = 2;
   // A map containing descriptions of potential response payloads.
   map<string, MediaType> content = 3;
   // A map of operations links that can be followed from the response.

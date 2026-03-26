@@ -706,7 +706,7 @@ func (g *generator) convertResponse(resp *options.Response) *Response {
 	if len(resp.GetHeaders()) > 0 {
 		r.Headers = make(map[string]*HeaderRef)
 		for name, h := range resp.GetHeaders() {
-			r.Headers[name] = &HeaderRef{Value: g.convertHeader(h)}
+			r.Headers[name] = g.convertHeaderOrReference(h)
 		}
 	}
 	if len(resp.GetContent()) > 0 {

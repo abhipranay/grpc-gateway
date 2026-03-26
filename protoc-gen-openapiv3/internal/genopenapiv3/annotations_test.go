@@ -746,13 +746,17 @@ func TestConvertSecurityScheme(t *testing.T) {
 func TestConvertResponse(t *testing.T) {
 	input := &options.Response{
 		Description: "User not found",
-		Headers: map[string]*options.Header{
+		Headers: map[string]*options.HeaderOrReference{
 			"X-Request-Id": {
-				Description: "Request ID",
-				Schema: &options.SchemaOrReference{
-					Oneof: &options.SchemaOrReference_Value{
-						Value: &options.Schema{
-							Type: []string{"string"},
+				Oneof: &options.HeaderOrReference_Header{
+					Header: &options.Header{
+						Description: "Request ID",
+						Schema: &options.SchemaOrReference{
+							Oneof: &options.SchemaOrReference_Value{
+								Value: &options.Schema{
+									Type: []string{"string"},
+								},
+							},
 						},
 					},
 				},
