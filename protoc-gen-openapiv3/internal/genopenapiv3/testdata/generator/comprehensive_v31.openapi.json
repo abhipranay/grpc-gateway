@@ -398,7 +398,7 @@
                 },
                 "security": [
                     {
-                        "bearer_auth": null
+                        "bearer_auth": []
                     }
                 ],
                 "servers": [
@@ -1135,7 +1135,7 @@
     },
     "security": [
         {
-            "api_key": null
+            "api_key": []
         }
     ],
     "tags": [

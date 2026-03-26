@@ -633,7 +633,11 @@ func convertServer(s *options.Server) *Server {
 func convertSecurityRequirement(sec *options.SecurityRequirement) SecurityRequirement {
 	result := make(SecurityRequirement)
 	for name, val := range sec.GetSecurityRequirement() {
-		result[name] = val.GetScope()
+		scopes := val.GetScope()
+		if scopes == nil {
+			scopes = []string{} // OpenAPI requires empty array, not null
+		}
+		result[name] = scopes
 	}
 	return result
 }
