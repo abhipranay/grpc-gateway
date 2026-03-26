@@ -84,16 +84,13 @@ func isNullable(schema *Schema) bool {
 	return schema.Nullable
 }
 
-// getExampleValue extracts the example value from an examples map.
-// Returns nil if the map is empty or the "example" key doesn't exist.
-func getExampleValue(examples map[string]*ExampleRef) any {
-	if examples == nil {
+// getExampleValue extracts the first example value from a JSON Schema examples array.
+// Returns nil if the array is empty.
+func getExampleValue(examples []any) any {
+	if len(examples) == 0 {
 		return nil
 	}
-	if ex, ok := examples["example"]; ok && ex != nil && ex.Value != nil {
-		return ex.Value.Value
-	}
-	return nil
+	return examples[0]
 }
 
 // findParamByName finds a parameter by name in a slice of ParameterRef.

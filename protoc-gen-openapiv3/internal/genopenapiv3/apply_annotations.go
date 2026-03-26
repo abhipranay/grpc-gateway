@@ -30,8 +30,17 @@ func parseExampleValue(s string) any {
 	return result
 }
 
-// makeExamplesMap converts a single example value to the OpenAPI 3.1.0 examples map format.
-// In OpenAPI 3.1.0, the singular `example` field is deprecated in favor of `examples` (a map of named Example objects).
+// makeExamplesArray converts a single example value to the JSON Schema examples array format.
+// In OpenAPI 3.1.0, Schema Objects use JSON Schema which has `examples` as an array.
+func makeExamplesArray(value any) []any {
+	if value == nil {
+		return nil
+	}
+	return []any{value}
+}
+
+// makeExamplesMap converts a single example value to the OpenAPI examples map format.
+// Used for Parameter, Header, and MediaType objects (not Schema objects).
 func makeExamplesMap(value any) map[string]*ExampleRef {
 	if value == nil {
 		return nil
@@ -327,7 +336,7 @@ func (g *generator) applySchemaAnnotation(schema *Schema, msg *descriptor.Messag
 
 	// Apply example (using examples map for OpenAPI 3.1.0 compliance)
 	if opts.GetExample() != "" {
-		schema.Examples = makeExamplesMap(parseExampleValue(opts.GetExample()))
+		schema.Examples = makeExamplesArray(parseExampleValue(opts.GetExample()))
 	}
 
 	// Apply read only
@@ -416,7 +425,7 @@ func (g *generator) applyFieldAnnotation(schema *Schema, field *descriptor.Field
 
 	// Apply example (using examples map for OpenAPI 3.1.0 compliance)
 	if opts.GetExample() != "" {
-		schema.Examples = makeExamplesMap(parseExampleValue(opts.GetExample()))
+		schema.Examples = makeExamplesArray(parseExampleValue(opts.GetExample()))
 	}
 
 	// Apply format
@@ -596,7 +605,7 @@ func (g *generator) applyEnumAnnotation(schema *Schema, enum *descriptor.Enum) {
 
 	// Apply example (using examples map for OpenAPI 3.1.0 compliance)
 	if opts.GetExample() != "" {
-		schema.Examples = makeExamplesMap(parseExampleValue(opts.GetExample()))
+		schema.Examples = makeExamplesArray(parseExampleValue(opts.GetExample()))
 	}
 
 	// Apply deprecated
@@ -1108,7 +1117,7 @@ func (g *generator) convertSchema(schema *options.Schema) *SchemaOrReference {
 
 	// Apply example (using examples map for OpenAPI 3.1.0 compliance)
 	if schema.GetExample() != "" {
-		s.Examples = makeExamplesMap(parseExampleValue(schema.GetExample()))
+		s.Examples = makeExamplesArray(parseExampleValue(schema.GetExample()))
 	}
 
 	// Apply enum values

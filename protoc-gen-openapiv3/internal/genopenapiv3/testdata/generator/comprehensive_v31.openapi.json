@@ -834,14 +834,12 @@
                     "id",
                     "name"
                 ],
-                "examples": {
-                    "example": {
-                        "value": {
-                            "id": "item-123",
-                            "name": "Example Item"
-                        }
+                "examples": [
+                    {
+                        "id": "item-123",
+                        "name": "Example Item"
                     }
-                }
+                ]
             },
             "comprehensiveListItemsResponse": {
                 "type": "object",
@@ -1038,11 +1036,9 @@
                         "minLength": 3,
                         "maxLength": 50,
                         "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
-                        "examples": {
-                            "example": {
-                                "value": "johndoe"
-                            }
-                        }
+                        "examples": [
+                            "johndoe"
+                        ]
                     },
                     "uuid": {
                         "type": "string",
