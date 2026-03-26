@@ -193,11 +193,11 @@ func (g *generator) applyComponentsAnnotation(comp *Components, opts *options.Co
 	}
 
 	// Apply Request Bodies
-	for _, namedBody := range opts.GetRequestBodies() {
+	for name, body := range opts.GetRequestBodies() {
 		if comp.RequestBodies == nil {
 			comp.RequestBodies = make(map[string]*RequestBodyRef)
 		}
-		comp.RequestBodies[namedBody.GetName()] = g.convertRequestBodyOrReference(namedBody.GetValue())
+		comp.RequestBodies[name] = &RequestBodyRef{Value: g.convertRequestBody(body)}
 	}
 
 	// Apply Headers
@@ -261,19 +261,21 @@ func (g *generator) applyOperationAnnotation(op *Operation, method *descriptor.M
 		if op.Responses == nil {
 			op.Responses = NewResponses()
 		}
-		// Apply default response
+		// Apply default response - merges inline, overwrites for reference
 		if defaultResp := responses.GetDefault(); defaultResp != nil {
-			op.Responses.Default = g.convertResponseOrReference(defaultResp)
+			op.Responses.Default = g.applyResponseOrReference(op.Responses.Default, defaultResp)
 		}
-		// Apply status code specific responses
+		// Apply status code specific responses - merges inline, overwrites for reference
 		for _, namedResp := range responses.GetResponseOrReference() {
-			op.Responses.Codes[namedResp.GetName()] = g.convertResponseOrReference(namedResp.GetValue())
+			code := namedResp.GetName()
+			existing := op.Responses.Codes[code]
+			op.Responses.Codes[code] = g.applyResponseOrReference(existing, namedResp.GetValue())
 		}
 	}
 
-	// Apply request body override if provided
+	// Apply request body annotation - merges with existing (preserves content if not specified)
 	if reqBody := opts.GetRequestBody(); reqBody != nil {
-		op.RequestBody = g.convertRequestBodyOrReference(reqBody)
+		op.RequestBody = g.applyRequestBody(op.RequestBody, reqBody)
 	}
 
 	// Apply custom parameters (headers and cookies)
@@ -831,24 +833,99 @@ func (g *generator) convertResponseOrReference(ror *options.ResponseOrReference)
 	}
 }
 
-// convertRequestBodyOrReference converts a proto RequestBodyOrReference to a RequestBodyRef.
-func (g *generator) convertRequestBodyOrReference(rbor *options.RequestBodyOrReference) *RequestBodyRef {
-	if rbor == nil {
-		return nil
+// applyResponseOrReference applies a ResponseOrReference annotation to an existing ResponseRef.
+// For reference annotations ($ref): overwrites entirely.
+// For inline annotations: merges with existing (preserves content/headers if not specified in annotation).
+func (g *generator) applyResponseOrReference(existing *ResponseRef, annotation *options.ResponseOrReference) *ResponseRef {
+	if annotation == nil {
+		return existing
 	}
 
-	switch v := rbor.GetOneof().(type) {
-	case *options.RequestBodyOrReference_Reference:
-		return &RequestBodyRef{
+	switch v := annotation.GetOneof().(type) {
+	case *options.ResponseOrReference_Reference:
+		// Reference: overwrite entirely
+		return &ResponseRef{
 			Ref: v.Reference.GetRef(),
 		}
-	case *options.RequestBodyOrReference_RequestBody:
-		return &RequestBodyRef{
-			Value: g.convertRequestBody(v.RequestBody),
+	case *options.ResponseOrReference_Response:
+		// Inline: merge with existing
+		annotationResp := v.Response
+		result := &Response{}
+
+		// Description: annotation wins if specified
+		if annotationResp.GetDescription() != "" {
+			result.Description = annotationResp.GetDescription()
+		} else if existing != nil && existing.Value != nil {
+			result.Description = existing.Value.Description
 		}
+
+		// Content: keep existing if annotation doesn't specify
+		if len(annotationResp.GetContent()) > 0 {
+			result.Content = make(map[string]*MediaType)
+			for mediaType, mt := range annotationResp.GetContent() {
+				result.Content[mediaType] = g.convertMediaType(mt)
+			}
+		} else if existing != nil && existing.Value != nil && len(existing.Value.Content) > 0 {
+			result.Content = existing.Value.Content
+		}
+
+		// Headers: merge maps (existing first, then annotation overrides/adds)
+		if (existing != nil && existing.Value != nil && len(existing.Value.Headers) > 0) || len(annotationResp.GetHeaders()) > 0 {
+			result.Headers = make(map[string]*HeaderRef)
+			// Copy existing headers first
+			if existing != nil && existing.Value != nil {
+				for name, header := range existing.Value.Headers {
+					result.Headers[name] = header
+				}
+			}
+			// Add/override with annotation headers
+			for name, headerOrRef := range annotationResp.GetHeaders() {
+				result.Headers[name] = g.convertHeaderOrReference(headerOrRef)
+			}
+		}
+
+		return &ResponseRef{Value: result}
 	default:
-		return nil
+		return existing
 	}
+}
+
+// applyRequestBody applies a RequestBody annotation to an existing RequestBodyRef.
+// Merges with existing (preserves content if not specified in annotation).
+// Note: References are not supported for Operation.request_body because the
+// request body schema is derived from the proto input message.
+func (g *generator) applyRequestBody(existing *RequestBodyRef, annotation *options.RequestBody) *RequestBodyRef {
+	if annotation == nil {
+		return existing
+	}
+
+	result := &RequestBody{}
+
+	// Description: annotation wins if specified
+	if annotation.GetDescription() != "" {
+		result.Description = annotation.GetDescription()
+	} else if existing != nil && existing.Value != nil {
+		result.Description = existing.Value.Description
+	}
+
+	// Content: keep existing if annotation doesn't specify
+	if len(annotation.GetContent()) > 0 {
+		result.Content = make(map[string]*MediaType)
+		for mediaType, mt := range annotation.GetContent() {
+			result.Content[mediaType] = g.convertMediaType(mt)
+		}
+	} else if existing != nil && existing.Value != nil && len(existing.Value.Content) > 0 {
+		result.Content = existing.Value.Content
+	}
+
+	// Required: annotation wins if true, otherwise preserve existing
+	if annotation.GetRequired() {
+		result.Required = true
+	} else if existing != nil && existing.Value != nil {
+		result.Required = existing.Value.Required
+	}
+
+	return &RequestBodyRef{Value: result}
 }
 
 // convertCookieParameter converts a proto CookieParameter to a Parameter with in="cookie".

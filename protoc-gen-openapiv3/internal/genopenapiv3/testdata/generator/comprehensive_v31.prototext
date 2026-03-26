@@ -610,10 +610,8 @@ proto_file: {
           summary: "Create a new item"
           description: "Creates a new item and returns the created item."
           request_body: {
-            request_body: {
-              description: "Item to create"
-              required: true
-            }
+            description: "Item to create"
+            required: true
           }
         }
       }

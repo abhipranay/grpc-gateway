@@ -94,6 +94,13 @@
                 "operationId": "ItemService_CreateItem",
                 "requestBody": {
                     "description": "Item to create",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/comprehensiveCreateItemRequest"
+                            }
+                        }
+                    },
                     "required": true
                 },
                 "responses": {
@@ -156,7 +163,14 @@
                         "$ref": "#/components/responses/NotFound"
                     },
                     "default": {
-                        "description": "Unexpected error"
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/google.rpc.Status"
+                                }
+                            }
+                        }
                     }
                 }
             },
