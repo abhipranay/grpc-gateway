@@ -5,6 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/internal/descriptor"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv3/options"
+	"google.golang.org/grpc/grpclog"
 )
 
 // parseExampleValue attempts to parse a string as JSON.
@@ -268,6 +269,13 @@ func (g *generator) applyOperationAnnotation(op *Operation, method *descriptor.M
 		// Apply status code specific responses - merges inline, overwrites for reference
 		for _, namedResp := range responses.GetResponseOrReference() {
 			code := namedResp.GetName()
+			if code == "200" {
+				methodName := method.GetName()
+				if method.Service != nil {
+					methodName = method.Service.GetName() + "." + methodName
+				}
+				grpclog.Warningf("Annotation overrides 200 response for method %s - the success response schema should be derived from proto return type", methodName)
+			}
 			existing := op.Responses.Codes[code]
 			op.Responses.Codes[code] = g.applyResponseOrReference(existing, namedResp.GetValue())
 		}
