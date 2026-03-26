@@ -193,11 +193,11 @@ func (g *generator) applyComponentsAnnotation(comp *Components, opts *options.Co
 	}
 
 	// Apply Request Bodies
-	for name, body := range opts.GetRequestBodies() {
+	for _, namedBody := range opts.GetRequestBodies() {
 		if comp.RequestBodies == nil {
 			comp.RequestBodies = make(map[string]*RequestBodyRef)
 		}
-		comp.RequestBodies[name] = &RequestBodyRef{Value: g.convertRequestBody(body)}
+		comp.RequestBodies[namedBody.GetName()] = g.convertRequestBodyOrReference(namedBody.GetValue())
 	}
 
 	// Apply Headers
@@ -273,7 +273,7 @@ func (g *generator) applyOperationAnnotation(op *Operation, method *descriptor.M
 
 	// Apply request body override if provided
 	if reqBody := opts.GetRequestBody(); reqBody != nil {
-		op.RequestBody = &RequestBodyRef{Value: g.convertRequestBody(reqBody)}
+		op.RequestBody = g.convertRequestBodyOrReference(reqBody)
 	}
 
 	// Apply custom parameters (headers and cookies)
@@ -825,6 +825,26 @@ func (g *generator) convertResponseOrReference(ror *options.ResponseOrReference)
 	case *options.ResponseOrReference_Response:
 		return &ResponseRef{
 			Value: g.convertResponse(v.Response),
+		}
+	default:
+		return nil
+	}
+}
+
+// convertRequestBodyOrReference converts a proto RequestBodyOrReference to a RequestBodyRef.
+func (g *generator) convertRequestBodyOrReference(rbor *options.RequestBodyOrReference) *RequestBodyRef {
+	if rbor == nil {
+		return nil
+	}
+
+	switch v := rbor.GetOneof().(type) {
+	case *options.RequestBodyOrReference_Reference:
+		return &RequestBodyRef{
+			Ref: v.Reference.GetRef(),
+		}
+	case *options.RequestBodyOrReference_RequestBody:
+		return &RequestBodyRef{
+			Value: g.convertRequestBody(v.RequestBody),
 		}
 	default:
 		return nil

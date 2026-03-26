@@ -153,7 +153,8 @@ message Components {
   // An object to hold reusable Example Objects.
   map<string, Example> examples = 4;
   // An object to hold reusable Request Body Objects.
-  map<string, RequestBody> request_bodies = 5;
+  // Uses repeated NamedRequestBodyOrReference to preserve insertion order.
+  repeated NamedRequestBodyOrReference request_bodies = 5;
   // An object to hold reusable Header Objects.
   // Values can be inline Header definitions or references to other headers.
   map<string, HeaderOrReference> headers = 6;
@@ -206,7 +207,8 @@ message Operation {
   // Path and query parameters are derived from the HTTP binding.
   OperationParameters parameters = 6;
   // The request body applicable for this operation.
-  RequestBody request_body = 7;
+  // Can be an inline RequestBody or a reference to a request body in components/requestBodies.
+  RequestBodyOrReference request_body = 7;
   // The list of possible responses as they are returned from executing this
   // operation.
   Responses responses = 8;
@@ -307,6 +309,25 @@ message RequestBody {
   bool required = 3;
   // Custom properties that start with "x-" such as "x-foo".
   map<string, google.protobuf.Value> extensions = 4;
+}
+
+// `RequestBodyOrReference` is a discriminated union that can be either an inline RequestBody
+// or a Reference. This allows request bodies to reference reusable request bodies defined in
+// components/requestBodies.
+// Aligned with gnostic-models pattern.
+message RequestBodyOrReference {
+  oneof oneof {
+    RequestBody request_body = 1;
+    Reference reference = 2;
+  }
+}
+
+// Automatically-generated message used to represent maps of RequestBodyOrReference as ordered (name,value) pairs.
+message NamedRequestBodyOrReference {
+  // Map key
+  string name = 1;
+  // Mapped value
+  RequestBodyOrReference value = 2;
 }
 
 // `Parameter` is a representation of OpenAPI v3 specification's Parameter object.

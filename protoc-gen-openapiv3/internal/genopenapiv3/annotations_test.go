@@ -2285,10 +2285,17 @@ func TestApplyComponentsAnnotation(t *testing.T) {
 		{
 			name: "add request bodies",
 			opts: &options.Components{
-				RequestBodies: map[string]*options.RequestBody{
-					"UserInput": {
-						Description: "User data",
-						Required:    true,
+				RequestBodies: []*options.NamedRequestBodyOrReference{
+					{
+						Name: "UserInput",
+						Value: &options.RequestBodyOrReference{
+							Oneof: &options.RequestBodyOrReference_RequestBody{
+								RequestBody: &options.RequestBody{
+									Description: "User data",
+									Required:    true,
+								},
+							},
+						},
 					},
 				},
 			},
