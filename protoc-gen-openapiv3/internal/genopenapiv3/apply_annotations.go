@@ -177,11 +177,11 @@ func (g *generator) applyComponentsAnnotation(comp *Components, opts *options.Co
 	}
 
 	// Apply Responses
-	for name, resp := range opts.GetResponses() {
+	for name, respOrRef := range opts.GetResponses() {
 		if comp.Responses == nil {
 			comp.Responses = make(map[string]*ResponseRef)
 		}
-		comp.Responses[name] = &ResponseRef{Value: g.convertResponse(resp)}
+		comp.Responses[name] = g.convertResponseOrReference(respOrRef)
 	}
 
 	// Apply Parameters
@@ -798,6 +798,26 @@ func (g *generator) convertHeaderOrReference(hor *options.HeaderOrReference) *He
 	case *options.HeaderOrReference_Header:
 		return &HeaderRef{
 			Value: g.convertHeader(v.Header),
+		}
+	default:
+		return nil
+	}
+}
+
+// convertResponseOrReference converts a proto ResponseOrReference to a ResponseRef.
+func (g *generator) convertResponseOrReference(ror *options.ResponseOrReference) *ResponseRef {
+	if ror == nil {
+		return nil
+	}
+
+	switch v := ror.GetOneof().(type) {
+	case *options.ResponseOrReference_Reference:
+		return &ResponseRef{
+			Ref: v.Reference.GetRef(),
+		}
+	case *options.ResponseOrReference_Response:
+		return &ResponseRef{
+			Value: g.convertResponse(v.Response),
 		}
 	default:
 		return nil

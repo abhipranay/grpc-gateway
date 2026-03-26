@@ -146,7 +146,8 @@ message Components {
   // An object to hold reusable Schema Objects.
   map<string, SchemaOrReference> schemas = 1;
   // An object to hold reusable Response Objects.
-  map<string, Response> responses = 2;
+  // Values can be inline Response definitions or references to other responses.
+  map<string, ResponseOrReference> responses = 2;
   // An object to hold reusable Parameter Objects.
   map<string, Parameter> parameters = 3;
   // An object to hold reusable Example Objects.
@@ -236,6 +237,17 @@ message Response {
   map<string, Link> links = 4;
   // Custom properties that start with "x-" such as "x-foo".
   map<string, google.protobuf.Value> extensions = 5;
+}
+
+// `ResponseOrReference` is a discriminated union that can be either an inline Response
+// or a Reference. This allows responses to reference reusable responses defined in
+// components/responses.
+// Aligned with gnostic-models pattern.
+message ResponseOrReference {
+  oneof oneof {
+    Response response = 1;
+    Reference reference = 2;
+  }
 }
 
 // `MediaType` is a representation of OpenAPI v3 specification's Media Type object.

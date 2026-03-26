@@ -879,7 +879,9 @@ proto_file: {
         responses: {
           key: "NotFound"
           value: {
-            description: "Resource not found"
+            response: {
+              description: "Resource not found"
+            }
           }
         }
         parameters: {

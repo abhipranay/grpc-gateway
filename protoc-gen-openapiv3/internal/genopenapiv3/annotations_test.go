@@ -2243,9 +2243,17 @@ func TestApplyComponentsAnnotation(t *testing.T) {
 		{
 			name: "add responses",
 			opts: &options.Components{
-				Responses: map[string]*options.Response{
-					"NotFound":   {Description: "Resource not found"},
-					"BadRequest": {Description: "Invalid request"},
+				Responses: map[string]*options.ResponseOrReference{
+					"NotFound": {
+						Oneof: &options.ResponseOrReference_Response{
+							Response: &options.Response{Description: "Resource not found"},
+						},
+					},
+					"BadRequest": {
+						Oneof: &options.ResponseOrReference_Response{
+							Response: &options.Response{Description: "Invalid request"},
+						},
+					},
 				},
 			},
 			wantResponses: 2,
