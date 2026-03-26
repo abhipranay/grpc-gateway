@@ -93,13 +93,7 @@
                 "description": "Creates a new item and returns the created item.",
                 "operationId": "ItemService_CreateItem",
                 "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/comprehensiveCreateItemRequest"
-                            }
-                        }
-                    },
+                    "description": "Item to create",
                     "required": true
                 },
                 "responses": {
@@ -158,15 +152,11 @@
                     "404": {
                         "description": "Item not found"
                     },
+                    "500": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
                     "default": {
-                        "description": "An unexpected error response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/google.rpc.Status"
-                                }
-                            }
-                        }
+                        "description": "Unexpected error"
                     }
                 }
             },

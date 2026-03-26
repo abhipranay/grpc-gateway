@@ -1741,18 +1741,20 @@ func TestApplyOperationAnnotation(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name             string
-		opts             *options.Operation
-		wantSummary      string
-		wantDesc         string
-		wantOpID         string
-		wantTags         []string
-		wantDeprecated   bool
-		wantSecurity     int
-		wantServers      int
-		wantHeaderParams int
-		wantCookieParams int
-		verifyParams     func(t *testing.T, params []*ParameterRef)
+		name              string
+		opts              *options.Operation
+		wantSummary       string
+		wantDesc          string
+		wantOpID          string
+		wantTags          []string
+		wantDeprecated    bool
+		wantSecurity      int
+		wantServers       int
+		wantHeaderParams  int
+		wantCookieParams  int
+		verifyParams      func(t *testing.T, params []*ParameterRef)
+		verifyResponses   func(t *testing.T, responses *Responses)
+		verifyRequestBody func(t *testing.T, body *RequestBodyRef)
 	}{
 		{
 			name: "override summary and description",
@@ -1974,6 +1976,107 @@ func TestApplyOperationAnnotation(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "add responses with default and codes",
+			opts: &options.Operation{
+				Responses: &options.Responses{
+					Default: &options.ResponseOrReference{
+						Oneof: &options.ResponseOrReference_Response{
+							Response: &options.Response{Description: "Unexpected error"},
+						},
+					},
+					ResponseOrReference: []*options.NamedResponseOrReference{
+						{
+							Name: "200",
+							Value: &options.ResponseOrReference{
+								Oneof: &options.ResponseOrReference_Response{
+									Response: &options.Response{Description: "Success"},
+								},
+							},
+						},
+						{
+							Name: "404",
+							Value: &options.ResponseOrReference{
+								Oneof: &options.ResponseOrReference_Reference{
+									Reference: &options.Reference{Ref: "#/components/responses/NotFound"},
+								},
+							},
+						},
+					},
+				},
+			},
+			verifyResponses: func(t *testing.T, responses *Responses) {
+				t.Helper()
+				if responses == nil {
+					t.Fatal("Responses should not be nil")
+				}
+				// Check default response
+				if responses.Default == nil {
+					t.Error("Default response should not be nil")
+				} else if responses.Default.Value == nil || responses.Default.Value.Description != "Unexpected error" {
+					t.Errorf("Default response description = %q, want %q", responses.Default.Value.Description, "Unexpected error")
+				}
+				// Check 200 response (inline)
+				if r, ok := responses.Codes["200"]; !ok {
+					t.Error("Missing 200 response")
+				} else if r.Value == nil || r.Value.Description != "Success" {
+					t.Errorf("200 response description = %q, want %q", r.Value.Description, "Success")
+				}
+				// Check 404 response (reference)
+				if r, ok := responses.Codes["404"]; !ok {
+					t.Error("Missing 404 response")
+				} else if r.Ref != "#/components/responses/NotFound" {
+					t.Errorf("404 response ref = %q, want %q", r.Ref, "#/components/responses/NotFound")
+				}
+			},
+		},
+		{
+			name: "add request body inline",
+			opts: &options.Operation{
+				RequestBody: &options.RequestBodyOrReference{
+					Oneof: &options.RequestBodyOrReference_RequestBody{
+						RequestBody: &options.RequestBody{
+							Description: "User input data",
+							Required:    true,
+						},
+					},
+				},
+			},
+			verifyRequestBody: func(t *testing.T, body *RequestBodyRef) {
+				t.Helper()
+				if body == nil {
+					t.Fatal("RequestBody should not be nil")
+				}
+				if body.Value == nil {
+					t.Fatal("RequestBody.Value should not be nil")
+				}
+				if body.Value.Description != "User input data" {
+					t.Errorf("Description = %q, want %q", body.Value.Description, "User input data")
+				}
+				if !body.Value.Required {
+					t.Error("Required should be true")
+				}
+			},
+		},
+		{
+			name: "add request body reference",
+			opts: &options.Operation{
+				RequestBody: &options.RequestBodyOrReference{
+					Oneof: &options.RequestBodyOrReference_Reference{
+						Reference: &options.Reference{Ref: "#/components/requestBodies/UserInput"},
+					},
+				},
+			},
+			verifyRequestBody: func(t *testing.T, body *RequestBodyRef) {
+				t.Helper()
+				if body == nil {
+					t.Fatal("RequestBody should not be nil")
+				}
+				if body.Ref != "#/components/requestBodies/UserInput" {
+					t.Errorf("Ref = %q, want %q", body.Ref, "#/components/requestBodies/UserInput")
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -2035,6 +2138,14 @@ func TestApplyOperationAnnotation(t *testing.T) {
 			// Run custom param verification if provided
 			if tt.verifyParams != nil {
 				tt.verifyParams(t, op.Parameters)
+			}
+			// Run custom responses verification if provided
+			if tt.verifyResponses != nil {
+				tt.verifyResponses(t, op.Responses)
+			}
+			// Run custom request body verification if provided
+			if tt.verifyRequestBody != nil {
+				tt.verifyRequestBody(t, op.RequestBody)
 			}
 		})
 	}
@@ -2221,6 +2332,8 @@ func TestApplyComponentsAnnotation(t *testing.T) {
 		wantParameters      int
 		wantRequestBodies   int
 		wantHeaders         int
+		verifyResponses     func(t *testing.T, responses map[string]*ResponseRef)
+		verifyRequestBodies func(t *testing.T, bodies map[string]*RequestBodyRef)
 	}{
 		{
 			name: "add security schemes",
@@ -2321,6 +2434,87 @@ func TestApplyComponentsAnnotation(t *testing.T) {
 			},
 			wantHeaders: 1,
 		},
+		{
+			name: "add responses with reference",
+			opts: &options.Components{
+				Responses: []*options.NamedResponseOrReference{
+					{
+						Name: "NotFound",
+						Value: &options.ResponseOrReference{
+							Oneof: &options.ResponseOrReference_Response{
+								Response: &options.Response{Description: "Resource not found"},
+							},
+						},
+					},
+					{
+						Name: "ErrorResponse",
+						Value: &options.ResponseOrReference{
+							Oneof: &options.ResponseOrReference_Reference{
+								Reference: &options.Reference{Ref: "#/components/responses/GenericError"},
+							},
+						},
+					},
+				},
+			},
+			wantResponses: 2,
+			verifyResponses: func(t *testing.T, responses map[string]*ResponseRef) {
+				t.Helper()
+				// Check inline response
+				if r, ok := responses["NotFound"]; !ok {
+					t.Error("Missing NotFound response")
+				} else if r.Value == nil || r.Value.Description != "Resource not found" {
+					t.Errorf("NotFound response description = %q, want %q", r.Value.Description, "Resource not found")
+				}
+				// Check reference response
+				if r, ok := responses["ErrorResponse"]; !ok {
+					t.Error("Missing ErrorResponse response")
+				} else if r.Ref != "#/components/responses/GenericError" {
+					t.Errorf("ErrorResponse ref = %q, want %q", r.Ref, "#/components/responses/GenericError")
+				}
+			},
+		},
+		{
+			name: "add request bodies with reference",
+			opts: &options.Components{
+				RequestBodies: []*options.NamedRequestBodyOrReference{
+					{
+						Name: "UserInput",
+						Value: &options.RequestBodyOrReference{
+							Oneof: &options.RequestBodyOrReference_RequestBody{
+								RequestBody: &options.RequestBody{
+									Description: "User data",
+									Required:    true,
+								},
+							},
+						},
+					},
+					{
+						Name: "SharedBody",
+						Value: &options.RequestBodyOrReference{
+							Oneof: &options.RequestBodyOrReference_Reference{
+								Reference: &options.Reference{Ref: "#/components/requestBodies/CommonInput"},
+							},
+						},
+					},
+				},
+			},
+			wantRequestBodies: 2,
+			verifyRequestBodies: func(t *testing.T, bodies map[string]*RequestBodyRef) {
+				t.Helper()
+				// Check inline request body
+				if rb, ok := bodies["UserInput"]; !ok {
+					t.Error("Missing UserInput request body")
+				} else if rb.Value == nil || rb.Value.Description != "User data" {
+					t.Errorf("UserInput description = %q, want %q", rb.Value.Description, "User data")
+				}
+				// Check reference request body
+				if rb, ok := bodies["SharedBody"]; !ok {
+					t.Error("Missing SharedBody request body")
+				} else if rb.Ref != "#/components/requestBodies/CommonInput" {
+					t.Errorf("SharedBody ref = %q, want %q", rb.Ref, "#/components/requestBodies/CommonInput")
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -2349,6 +2543,12 @@ func TestApplyComponentsAnnotation(t *testing.T) {
 			}
 			if tt.wantHeaders > 0 && len(comp.Headers) != tt.wantHeaders {
 				t.Errorf("Headers count = %d, want %d", len(comp.Headers), tt.wantHeaders)
+			}
+			if tt.verifyResponses != nil {
+				tt.verifyResponses(t, comp.Responses)
+			}
+			if tt.verifyRequestBodies != nil {
+				tt.verifyRequestBodies(t, comp.RequestBodies)
 			}
 		})
 	}
