@@ -5,58 +5,20 @@ import (
 	"encoding/json"
 	"sort"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv3/internal/genopenapiv3/transform"
 	"go.yaml.in/yaml/v3"
 )
 
 // Document is the OpenAPI 3.1.0 output document.
 type Document struct {
-	OpenAPI      string                `json:"openapi" yaml:"openapi"`
-	Info         *Info                 `json:"info" yaml:"info"`
-	Servers      []*Server             `json:"servers,omitempty" yaml:"servers,omitempty"`
-	Paths        *Paths                `json:"paths,omitempty" yaml:"paths,omitempty"`
-	Components   *Components           `json:"components,omitempty" yaml:"components,omitempty"`
-	Security     []SecurityRequirement `json:"security,omitempty" yaml:"security,omitempty"`
-	Tags         []*Tag                `json:"tags,omitempty" yaml:"tags,omitempty"`
-	ExternalDocs *ExternalDocs         `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
-}
-
-// Info provides metadata about the API.
-type Info struct {
-	Title          string   `json:"title" yaml:"title"`
-	Summary        string   `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description    string   `json:"description,omitempty" yaml:"description,omitempty"`
-	TermsOfService string   `json:"termsOfService,omitempty" yaml:"termsOfService,omitempty"`
-	Contact        *Contact `json:"contact,omitempty" yaml:"contact,omitempty"`
-	License        *License `json:"license,omitempty" yaml:"license,omitempty"`
-	Version        string   `json:"version" yaml:"version"`
-}
-
-// Contact information for the API.
-type Contact struct {
-	Name  string `json:"name,omitempty" yaml:"name,omitempty"`
-	URL   string `json:"url,omitempty" yaml:"url,omitempty"`
-	Email string `json:"email,omitempty" yaml:"email,omitempty"`
-}
-
-// License information for the API.
-type License struct {
-	Name       string `json:"name" yaml:"name"`
-	Identifier string `json:"identifier,omitempty" yaml:"identifier,omitempty"`
-	URL        string `json:"url,omitempty" yaml:"url,omitempty"`
-}
-
-// Server represents a server.
-type Server struct {
-	URL         string                     `json:"url" yaml:"url"`
-	Description string                     `json:"description,omitempty" yaml:"description,omitempty"`
-	Variables   map[string]*ServerVariable `json:"variables,omitempty" yaml:"variables,omitempty"`
-}
-
-// ServerVariable represents a server variable for URL template substitution.
-type ServerVariable struct {
-	Enum        []string `json:"enum,omitempty" yaml:"enum,omitempty"`
-	Default     string   `json:"default" yaml:"default"`
-	Description string   `json:"description,omitempty" yaml:"description,omitempty"`
+	OpenAPI      string                        `json:"openapi" yaml:"openapi"`
+	Info         *transform.Info               `json:"info" yaml:"info"`
+	Servers      []*transform.Server           `json:"servers,omitempty" yaml:"servers,omitempty"`
+	Paths        *Paths                        `json:"paths,omitempty" yaml:"paths,omitempty"`
+	Components   *Components                   `json:"components,omitempty" yaml:"components,omitempty"`
+	Security     []transform.SecurityRequirement `json:"security,omitempty" yaml:"security,omitempty"`
+	Tags         []*transform.Tag              `json:"tags,omitempty" yaml:"tags,omitempty"`
+	ExternalDocs *transform.ExternalDocs       `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
 }
 
 // Paths holds the relative paths to individual endpoints.
@@ -82,41 +44,35 @@ func (p *Paths) MarshalYAML() (any, error) {
 
 // PathItem describes operations available on a single path.
 type PathItem struct {
-	Ref         string            `json:"$ref,omitempty" yaml:"$ref,omitempty"`
-	Summary     string            `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description string            `json:"description,omitempty" yaml:"description,omitempty"`
-	Get         *Operation        `json:"get,omitempty" yaml:"get,omitempty"`
-	Put         *Operation        `json:"put,omitempty" yaml:"put,omitempty"`
-	Post        *Operation        `json:"post,omitempty" yaml:"post,omitempty"`
-	Delete      *Operation        `json:"delete,omitempty" yaml:"delete,omitempty"`
-	Options     *Operation        `json:"options,omitempty" yaml:"options,omitempty"`
-	Head        *Operation        `json:"head,omitempty" yaml:"head,omitempty"`
-	Patch       *Operation        `json:"patch,omitempty" yaml:"patch,omitempty"`
-	Trace       *Operation        `json:"trace,omitempty" yaml:"trace,omitempty"`
-	Servers     []*Server         `json:"servers,omitempty" yaml:"servers,omitempty"`
-	Parameters  []*ParameterOrRef `json:"parameters,omitempty" yaml:"parameters,omitempty"`
+	Ref         string              `json:"$ref,omitempty" yaml:"$ref,omitempty"`
+	Summary     string              `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description string              `json:"description,omitempty" yaml:"description,omitempty"`
+	Get         *Operation          `json:"get,omitempty" yaml:"get,omitempty"`
+	Put         *Operation          `json:"put,omitempty" yaml:"put,omitempty"`
+	Post        *Operation          `json:"post,omitempty" yaml:"post,omitempty"`
+	Delete      *Operation          `json:"delete,omitempty" yaml:"delete,omitempty"`
+	Options     *Operation          `json:"options,omitempty" yaml:"options,omitempty"`
+	Head        *Operation          `json:"head,omitempty" yaml:"head,omitempty"`
+	Patch       *Operation          `json:"patch,omitempty" yaml:"patch,omitempty"`
+	Trace       *Operation          `json:"trace,omitempty" yaml:"trace,omitempty"`
+	Servers     []*transform.Server `json:"servers,omitempty" yaml:"servers,omitempty"`
+	Parameters  []*ParameterOrRef   `json:"parameters,omitempty" yaml:"parameters,omitempty"`
 }
 
 // Operation describes a single API operation on a path.
 type Operation struct {
-	Tags         []string                  `json:"tags,omitempty" yaml:"tags,omitempty"`
-	Summary      string                    `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description  string                    `json:"description,omitempty" yaml:"description,omitempty"`
-	ExternalDocs *ExternalDocs             `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
-	OperationID  string                    `json:"operationId,omitempty" yaml:"operationId,omitempty"`
-	Parameters   []*ParameterOrRef         `json:"parameters,omitempty" yaml:"parameters,omitempty"`
-	RequestBody  *RequestBodyOrRef         `json:"requestBody,omitempty" yaml:"requestBody,omitempty"`
-	Responses    *Responses                `json:"responses,omitempty" yaml:"responses,omitempty"`
-	Callbacks    map[string]*CallbackOrRef `json:"callbacks,omitempty" yaml:"callbacks,omitempty"`
-	Deprecated   bool                      `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
-	Security     []SecurityRequirement     `json:"security,omitempty" yaml:"security,omitempty"`
-	Servers      []*Server                 `json:"servers,omitempty" yaml:"servers,omitempty"`
-}
-
-// ExternalDocs allows referencing external documentation.
-type ExternalDocs struct {
-	Description string `json:"description,omitempty" yaml:"description,omitempty"`
-	URL         string `json:"url" yaml:"url"`
+	Tags         []string                        `json:"tags,omitempty" yaml:"tags,omitempty"`
+	Summary      string                          `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description  string                          `json:"description,omitempty" yaml:"description,omitempty"`
+	ExternalDocs *transform.ExternalDocs         `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+	OperationID  string                          `json:"operationId,omitempty" yaml:"operationId,omitempty"`
+	Parameters   []*ParameterOrRef               `json:"parameters,omitempty" yaml:"parameters,omitempty"`
+	RequestBody  *RequestBodyOrRef               `json:"requestBody,omitempty" yaml:"requestBody,omitempty"`
+	Responses    *Responses                      `json:"responses,omitempty" yaml:"responses,omitempty"`
+	Callbacks    map[string]*CallbackOrRef       `json:"callbacks,omitempty" yaml:"callbacks,omitempty"`
+	Deprecated   bool                            `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
+	Security     []transform.SecurityRequirement `json:"security,omitempty" yaml:"security,omitempty"`
+	Servers      []*transform.Server             `json:"servers,omitempty" yaml:"servers,omitempty"`
 }
 
 // ParameterOrRef is either an inline Parameter or a reference.
@@ -393,12 +349,12 @@ func (l *LinkOrRef) MarshalYAML() (any, error) {
 
 // Link represents a possible design-time link for a response.
 type Link struct {
-	OperationRef string         `json:"operationRef,omitempty" yaml:"operationRef,omitempty"`
-	OperationID  string         `json:"operationId,omitempty" yaml:"operationId,omitempty"`
-	Parameters   map[string]any `json:"parameters,omitempty" yaml:"parameters,omitempty"`
-	RequestBody  any            `json:"requestBody,omitempty" yaml:"requestBody,omitempty"`
-	Description  string         `json:"description,omitempty" yaml:"description,omitempty"`
-	Server       *Server        `json:"server,omitempty" yaml:"server,omitempty"`
+	OperationRef string            `json:"operationRef,omitempty" yaml:"operationRef,omitempty"`
+	OperationID  string            `json:"operationId,omitempty" yaml:"operationId,omitempty"`
+	Parameters   map[string]any    `json:"parameters,omitempty" yaml:"parameters,omitempty"`
+	RequestBody  any               `json:"requestBody,omitempty" yaml:"requestBody,omitempty"`
+	Description  string            `json:"description,omitempty" yaml:"description,omitempty"`
+	Server       *transform.Server `json:"server,omitempty" yaml:"server,omitempty"`
 }
 
 // CallbackOrRef is either an inline Callback or a reference.
@@ -474,15 +430,15 @@ type Schema struct {
 	// Type - can be string or []string for nullable (e.g., ["string", "null"])
 	Type any `json:"type,omitempty" yaml:"type,omitempty"`
 
-	Format       string        `json:"format,omitempty" yaml:"format,omitempty"`
-	Title        string        `json:"title,omitempty" yaml:"title,omitempty"`
-	Description  string        `json:"description,omitempty" yaml:"description,omitempty"`
-	Default      any           `json:"default,omitempty" yaml:"default,omitempty"`
-	Examples     []any         `json:"examples,omitempty" yaml:"examples,omitempty"`
-	Deprecated   bool          `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
-	ReadOnly     bool          `json:"readOnly,omitempty" yaml:"readOnly,omitempty"`
-	WriteOnly    bool          `json:"writeOnly,omitempty" yaml:"writeOnly,omitempty"`
-	ExternalDocs *ExternalDocs `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+	Format       string                  `json:"format,omitempty" yaml:"format,omitempty"`
+	Title        string                  `json:"title,omitempty" yaml:"title,omitempty"`
+	Description  string                  `json:"description,omitempty" yaml:"description,omitempty"`
+	Default      any                     `json:"default,omitempty" yaml:"default,omitempty"`
+	Examples     []any                   `json:"examples,omitempty" yaml:"examples,omitempty"`
+	Deprecated   bool                    `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
+	ReadOnly     bool                    `json:"readOnly,omitempty" yaml:"readOnly,omitempty"`
+	WriteOnly    bool                    `json:"writeOnly,omitempty" yaml:"writeOnly,omitempty"`
+	ExternalDocs *transform.ExternalDocs `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
 
 	// Numeric validation
 	MultipleOf       *float64 `json:"multipleOf,omitempty" yaml:"multipleOf,omitempty"`
@@ -510,11 +466,11 @@ type Schema struct {
 	AdditionalProperties *AdditionalProperties   `json:"additionalProperties,omitempty" yaml:"additionalProperties,omitempty"`
 
 	// Composition
-	AllOf         []*SchemaOrRef `json:"allOf,omitempty" yaml:"allOf,omitempty"`
-	AnyOf         []*SchemaOrRef `json:"anyOf,omitempty" yaml:"anyOf,omitempty"`
-	OneOf         []*SchemaOrRef `json:"oneOf,omitempty" yaml:"oneOf,omitempty"`
-	Not           *SchemaOrRef   `json:"not,omitempty" yaml:"not,omitempty"`
-	Discriminator *Discriminator `json:"discriminator,omitempty" yaml:"discriminator,omitempty"`
+	AllOf         []*SchemaOrRef           `json:"allOf,omitempty" yaml:"allOf,omitempty"`
+	AnyOf         []*SchemaOrRef           `json:"anyOf,omitempty" yaml:"anyOf,omitempty"`
+	OneOf         []*SchemaOrRef           `json:"oneOf,omitempty" yaml:"oneOf,omitempty"`
+	Not           *SchemaOrRef             `json:"not,omitempty" yaml:"not,omitempty"`
+	Discriminator *transform.Discriminator `json:"discriminator,omitempty" yaml:"discriminator,omitempty"`
 
 	// Enum
 	Enum []any `json:"enum,omitempty" yaml:"enum,omitempty"`
@@ -540,12 +496,6 @@ func (a *AdditionalProperties) MarshalYAML() (any, error) {
 		return a.Schema, nil
 	}
 	return a.Allowed, nil
-}
-
-// Discriminator helps with polymorphism.
-type Discriminator struct {
-	PropertyName string            `json:"propertyName" yaml:"propertyName"`
-	Mapping      map[string]string `json:"mapping,omitempty" yaml:"mapping,omitempty"`
 }
 
 // Example represents an example value.
@@ -591,8 +541,8 @@ type Components struct {
 
 // SecuritySchemeOrRef is either an inline SecurityScheme or a reference.
 type SecuritySchemeOrRef struct {
-	Ref   string          `json:"-" yaml:"-"`
-	Value *SecurityScheme `json:"-" yaml:"-"`
+	Ref   string                    `json:"-" yaml:"-"`
+	Value *transform.SecurityScheme `json:"-" yaml:"-"`
 }
 
 // MarshalJSON outputs either a $ref or the security scheme fields.
@@ -614,43 +564,6 @@ func (s *SecuritySchemeOrRef) MarshalYAML() (any, error) {
 	return s.Value, nil
 }
 
-// SecurityScheme defines a security scheme.
-type SecurityScheme struct {
-	Type             string      `json:"type" yaml:"type"`
-	Description      string      `json:"description,omitempty" yaml:"description,omitempty"`
-	Name             string      `json:"name,omitempty" yaml:"name,omitempty"`
-	In               string      `json:"in,omitempty" yaml:"in,omitempty"`
-	Scheme           string      `json:"scheme,omitempty" yaml:"scheme,omitempty"`
-	BearerFormat     string      `json:"bearerFormat,omitempty" yaml:"bearerFormat,omitempty"`
-	Flows            *OAuthFlows `json:"flows,omitempty" yaml:"flows,omitempty"`
-	OpenIDConnectURL string      `json:"openIdConnectUrl,omitempty" yaml:"openIdConnectUrl,omitempty"`
-}
-
-// OAuthFlows allows configuration of supported OAuth Flows.
-type OAuthFlows struct {
-	Implicit          *OAuthFlow `json:"implicit,omitempty" yaml:"implicit,omitempty"`
-	Password          *OAuthFlow `json:"password,omitempty" yaml:"password,omitempty"`
-	ClientCredentials *OAuthFlow `json:"clientCredentials,omitempty" yaml:"clientCredentials,omitempty"`
-	AuthorizationCode *OAuthFlow `json:"authorizationCode,omitempty" yaml:"authorizationCode,omitempty"`
-}
-
-// OAuthFlow configuration details for a supported OAuth Flow.
-type OAuthFlow struct {
-	AuthorizationURL string            `json:"authorizationUrl,omitempty" yaml:"authorizationUrl,omitempty"`
-	TokenURL         string            `json:"tokenUrl,omitempty" yaml:"tokenUrl,omitempty"`
-	RefreshURL       string            `json:"refreshUrl,omitempty" yaml:"refreshUrl,omitempty"`
-	Scopes           map[string]string `json:"scopes,omitempty" yaml:"scopes,omitempty"`
-}
-
-// SecurityRequirement lists required security schemes.
-type SecurityRequirement map[string][]string
-
-// Tag adds metadata to a single tag.
-type Tag struct {
-	Name         string        `json:"name" yaml:"name"`
-	Description  string        `json:"description,omitempty" yaml:"description,omitempty"`
-	ExternalDocs *ExternalDocs `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
-}
 
 // Helper functions for ordered map marshaling
 

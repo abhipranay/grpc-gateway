@@ -42,7 +42,7 @@ func TestTransformSchema_Nullable(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := transformSchema(tt.input)
+			got := NewTransformer().transformSchema(tt.input)
 			if got == nil {
 				t.Fatal("transformSchema returned nil")
 			}
@@ -139,7 +139,7 @@ func TestTransformSchemaOrRef_RefSiblings(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := transformSchemaOrRef(tt.input)
+			got := NewTransformer().transformSchemaOrRef(tt.input)
 			if got == nil {
 				t.Fatal("transformSchemaOrRef returned nil")
 			}
@@ -240,7 +240,7 @@ func TestTransformSchema_PreservesAllFields(t *testing.T) {
 		ReadOnly:    true,
 	}
 
-	got := transformSchema(input)
+	got := NewTransformer().transformSchema(input)
 	if got == nil {
 		t.Fatal("transformSchema returned nil")
 	}

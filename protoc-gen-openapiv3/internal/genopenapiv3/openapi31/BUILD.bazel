@@ -12,6 +12,7 @@ go_library(
     importpath = "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv3/internal/genopenapiv3/openapi31",
     deps = [
         "//protoc-gen-openapiv3/internal/genopenapiv3/model",
+        "//protoc-gen-openapiv3/internal/genopenapiv3/transform",
         "@in_yaml_go_yaml_v3//:yaml",
     ],
 )
